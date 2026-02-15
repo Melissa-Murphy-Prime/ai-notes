@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gmail Inbox Cleanup</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📧 Gmail Inbox Cleanup</h1>
+            <p>Clean, organize, and manage your inbox efficiently</p>
+        </header>
+
+        <div class="status-card">
+            <h2>Inbox Status</h2>
+            <div id="stats" class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Total Emails</span>
+                    <span class="stat-value" id="total-emails">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Emails Older than 6 Months</span>
+                    <span class="stat-value" id="old-emails">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">% Old</span>
+                    <span class="stat-value" id="percent-old">-</span>
+                </div>
+            </div>
+            <button onclick="loadStats()" class="btn btn-primary">Refresh Stats</button>
+        </div>
+
+        <div class="cleanup-section">
+            <h2>Cleanup Operations</h2>
+
+            <!-- Delete Old Emails -->
+            <div class="cleanup-card">
+                <h3>🗑️ Delete Old Emails</h3>
+                <p>Permanently delete emails older than 6 months</p>
+                <button onclick="previewOldEmails()" class="btn btn-secondary">Preview</button>
+                <button onclick="deleteOldEmails()" class="btn btn-danger">Delete</button>
+                <div id="delete-preview" class="preview-area"></div>
+            </div>
+
+            <!-- Archive Old Emails -->
+            <div class="cleanup-card">
+                <h3>📦 Archive Old Emails</h3>
+                <p>Archive emails older than 6 months (keep them but out of inbox)</p>
+                <button onclick="previewOldEmails()" class="btn btn-secondary">Preview</button>
+                <button onclick="archiveOldEmails()" class="btn btn-success">Archive</button>
+                <div id="archive-preview" class="preview-area"></div>
+            </div>
+
+            <!-- Delete by Sender -->
+            <div class="cleanup-card">
+                <h3>✉️ Delete from Sender/Domain</h3>
+                <p>Delete or archive emails from specific senders</p>
+                <input type="text" id="sender-input" placeholder="Enter sender email or domain (e.g., noreply@example.com)" />
+                <button onclick="previewSenderEmails()" class="btn btn-secondary">Preview</button>
+                <button onclick="deleteSenderEmails()" class="btn btn-danger">Delete</button>
+                <button onclick="archiveSenderEmails()" class="btn btn-warning">Archive</button>
+                <div id="sender-preview" class="preview-area"></div>
+            </div>
+
+            <!-- Organize with Labels -->
+            <div class="cleanup-card">
+                <h3>🏷️ Organize with Labels</h3>
+                <p>Add labels to emails from specific senders</p>
+                <input type="text" id="organize-sender" placeholder="Sender email" />
+                <input type="text" id="organize-label" placeholder="Label name" />
+                <button onclick="previewOrganize()" class="btn btn-secondary">Preview</button>
+                <button onclick="organizeEmails()" class="btn btn-success">Apply Label</button>
+                <div id="organize-preview" class="preview-area"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Safe operations: All operations show a preview first. Always review before executing.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
