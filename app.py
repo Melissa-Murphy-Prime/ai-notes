@@ -6,6 +6,12 @@ import json
 app = Flask(__name__)
 CORS(app)
 
+# Add CSP headers to allow inline scripts and event handlers
+@app.after_request
+def set_csp(response):
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+    return response
+
 # Initialize Gmail service
 try:
     gmail = GmailService()
