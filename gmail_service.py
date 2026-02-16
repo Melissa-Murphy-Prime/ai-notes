@@ -25,17 +25,31 @@ class GmailService:
         # If no valid credentials, do OAuth flow
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES)
-                creds = flow.run_local_server(port=0)
+                try:
+                    creds.refresh(Request())
+                except Exception as e:
+                    print(f"Error refreshing credentials: {e}")
+                    creds = None
+
+            if not creds:
+                try:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        'credentials.json', SCOPES)
+                    creds = flow.run_local_server(port=0)
+                except Exception as e:
+                    print(f"Error during OAuth flow: {e}")
+                    print("Could not authenticate with Gmail. Please re-authenticate from your browser.")
+                    return
 
             # Save credentials for next run
-            with open('token.json', 'w') as token:
-                token.write(creds.to_json())
+            try:
+                with open('token.json', 'w') as token:
+                    token.write(creds.to_json())
+            except Exception as e:
+                print(f"Error saving credentials: {e}")
 
-        self.service = discovery.build('gmail', 'v1', credentials=creds)
+        if creds:
+            self.service = discovery.build('gmail', 'v1', credentials=creds)
 
     def get_emails(self, query, max_results=None):
         """Get emails matching a query with pagination support"""

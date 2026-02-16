@@ -1,7 +1,9 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect, url_for
 from flask_cors import CORS
 from gmail_service import GmailService
+from google_auth_oauthlib.flow import InstalledAppFlow
 import json
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -202,6 +204,24 @@ def organize_emails():
         'label': label,
         'emails_labeled': labeled_count if not dry_run else len(emails)
     })
+
+@app.route('/authenticate')
+def authenticate():
+    """Start OAuth authentication flow"""
+    SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
+
+    try:
+        flow = InstalledAppFlow.from_client_secrets_file(
+            'credentials.json', SCOPES)
+        creds = flow.run_local_server(port=8080, open_browser=True)
+
+        # Save credentials for next run
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+
+        return redirect(url_for('index'))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/')
 def index():
