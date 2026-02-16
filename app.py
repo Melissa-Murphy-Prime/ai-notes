@@ -1,12 +1,18 @@
-from flask import Flask, jsonify, request, redirect, url_for
+from flask import Flask, jsonify, request, redirect, url_for, session
 from flask_cors import CORS
 from gmail_service import GmailService
 from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 import json
 import os
+import threading
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-change-in-production'
 CORS(app)
+
+# Global to store flow for OAuth
+oauth_flows = {}
 
 # Add CSP headers to allow inline scripts and event handlers
 @app.after_request
@@ -207,23 +213,49 @@ def organize_emails():
 
 @app.route('/authenticate')
 def authenticate():
-    """Start OAuth authentication flow"""
+    """Generate OAuth authorization URL"""
     SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
     try:
         flow = InstalledAppFlow.from_client_secrets_file(
             'credentials.json', SCOPES)
 
-        # Run local server - will wait for OAuth callback
-        creds = flow.run_local_server(port=8080)
+        # Generate authorization URL
+        auth_url, state = flow.authorization_url(prompt='consent')
 
-        # Save credentials for next run
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+        # Store flow for later use in callback
+        oauth_flows[state] = flow
 
-        return jsonify({'success': True, 'message': 'Authentication successful! Refreshing app...'})
+        return jsonify({
+            'auth_url': auth_url,
+            'message': 'Open the URL in your browser to authorize'
+        })
     except Exception as e:
-        return jsonify({'error': f'Authentication failed: {str(e)}'}), 500
+        return jsonify({'error': f'Authentication setup failed: {str(e)}'}), 500
+
+@app.route('/oauth-callback')
+def oauth_callback():
+    """Handle OAuth callback"""
+    try:
+        code = request.args.get('code')
+        state = request.args.get('state')
+
+        if not code or state not in oauth_flows:
+            return jsonify({'error': 'Invalid callback'}), 400
+
+        flow = oauth_flows[state]
+        creds = flow.fetch_token(code=code)
+
+        # Save credentials
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json()) if hasattr(creds, 'to_json') else token.write(json.dumps(creds))
+
+        # Clean up
+        del oauth_flows[state]
+
+        return redirect(url_for('index'))
+    except Exception as e:
+        return jsonify({'error': f'OAuth callback failed: {str(e)}'}), 500
 
 @app.route('/')
 def index():
