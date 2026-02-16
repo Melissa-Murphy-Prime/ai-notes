@@ -37,15 +37,40 @@ class GmailService:
 
         self.service = discovery.build('gmail', 'v1', credentials=creds)
 
-    def get_emails(self, query, max_results=10):
-        """Get emails matching a query"""
+    def get_emails(self, query, max_results=None):
+        """Get emails matching a query with pagination support"""
         try:
-            results = self.service.users().messages().list(
-                userId='me',
-                q=query,
-                maxResults=max_results
-            ).execute()
-            return results.get('messages', [])
+            all_messages = []
+            page_size = min(500, max_results) if max_results else 500  # API max is 500
+            remaining = max_results
+            next_page_token = None
+
+            while True:
+                # Determine how many to fetch in this request
+                batch_size = remaining if remaining and remaining < page_size else page_size
+
+                results = self.service.users().messages().list(
+                    userId='me',
+                    q=query,
+                    maxResults=batch_size,
+                    pageToken=next_page_token
+                ).execute()
+
+                messages = results.get('messages', [])
+                all_messages.extend(messages)
+
+                # Check if we've reached the limit or end of results
+                if not max_results or len(all_messages) >= max_results:
+                    return all_messages[:max_results] if max_results else all_messages
+
+                # Check for next page
+                next_page_token = results.get('nextPageToken')
+                if not next_page_token:
+                    break
+
+                remaining = max_results - len(all_messages) if max_results else None
+
+            return all_messages
         except Exception as e:
             print(f"Error fetching emails: {e}")
             return []
@@ -71,7 +96,7 @@ class GmailService:
     def get_emails_from_sender(self, sender):
         """Get emails from a specific sender"""
         query = f"from:{sender}"
-        return self.get_emails(query, max_results=50)
+        return self.get_emails(query, max_results=None)  # Fetch all emails from this sender
 
     def delete_email(self, message_id):
         """Delete an email permanently"""
