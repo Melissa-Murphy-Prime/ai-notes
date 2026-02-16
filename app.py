@@ -213,15 +213,17 @@ def authenticate():
     try:
         flow = InstalledAppFlow.from_client_secrets_file(
             'credentials.json', SCOPES)
-        creds = flow.run_local_server(port=8080, open_browser=True)
+
+        # Run local server - will wait for OAuth callback
+        creds = flow.run_local_server(port=8080)
 
         # Save credentials for next run
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
 
-        return redirect(url_for('index'))
+        return jsonify({'success': True, 'message': 'Authentication successful! Refreshing app...'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Authentication failed: {str(e)}'}), 500
 
 @app.route('/')
 def index():
